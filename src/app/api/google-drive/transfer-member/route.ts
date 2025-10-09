@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGoogleDriveService } from '@/lib/googleDrive';
 import { getExcelService } from '@/lib/excelService';
-import db from '@/lib/database';
+import { getDatabaseService } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,13 +19,14 @@ export async function POST(request: NextRequest) {
 
     const googleDrive = getGoogleDriveService();
     const excelService = getExcelService();
+    const db = getDatabaseService();
 
     // Check if member already exists in database
-    const existingMember = db.prepare(
-      'SELECT * FROM members WHERE member_number = ? OR email = ?'
-    ).get(member.member_number, member.email);
+    const existingMembers = await db.searchMembers2025({ 
+      member_number: member.member_number 
+    });
 
-    if (existingMember) {
+    if (existingMembers.length > 0) {
       return NextResponse.json(
         { 
           success: false, 
@@ -35,45 +36,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Prepare member data for 2026
-    const member2026 = {
-      ...member,
-      year: 2026,
-      is_active: true,
-      source: '2025_list' as const,
-      amount_paid: member.amount_paid || 35
-    };
-
-    // Insert into database
-    const insertStmt = db.prepare(`
-      INSERT INTO members (
-        member_number, first_name, last_name, email, phone, 
-        amount_paid, year, is_active, source
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    const result = insertStmt.run(
-      member2026.member_number,
-      member2026.first_name,
-      member2026.last_name,
-      member2026.email,
-      member2026.phone || '',
-      member2026.amount_paid,
-      member2026.year,
-      member2026.is_active ? 1 : 0,
-      member2026.source
-    );
-
-    const newMemberId = result.lastInsertRowid;
+    // Transfer member to 2026
+    const transferredMember = await db.transferMemberTo2026(member);
 
     // Update the 2026 Excel file in Google Drive
-    await update2026ExcelFile(googleDrive, excelService);
+    await update2026ExcelFile(googleDrive, excelService, db);
 
     return NextResponse.json({
       success: true,
       data: {
-        memberId: newMemberId,
-        member: member2026,
+        memberId: transferredMember.id,
+        member: transferredMember,
         message: 'Member successfully transferred to 2026'
       }
     });
@@ -90,10 +63,10 @@ export async function POST(request: NextRequest) {
 }
 
 // Helper function to update 2026 Excel file
-async function update2026ExcelFile(googleDrive: any, excelService: any) {
+async function update2026ExcelFile(googleDrive: any, excelService: any, db: any) {
   try {
     // Get all 2026 members from database
-    const members2026 = db.prepare('SELECT * FROM members WHERE year = 2026').all();
+    const members2026 = await db.getMembers2026();
 
     // Convert to Excel buffer
     const excelBuffer = excelService.membersToExcelBuffer(members2026);
