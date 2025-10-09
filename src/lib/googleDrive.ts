@@ -2,6 +2,7 @@ import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 
 // Initialize Google Drive API
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class GoogleDriveService {
   private drive: any;
   private auth: OAuth2Client;

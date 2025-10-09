@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import AdminLayout from '@/components/AdminLayout';
 import Link from 'next/link';
 
@@ -54,7 +53,7 @@ export default function AdminDashboard() {
           error: data.error || 'Failed to connect to database'
         });
       }
-    } catch (error) {
+    } catch {
       setDbStatus({
         connected: false,
         error: 'Failed to connect to database'

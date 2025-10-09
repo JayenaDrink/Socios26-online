@@ -1,0 +1,15 @@
+# Railway deployment configuration
+# This file tells Railway how to build and run your Next.js app
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "npm start"
+healthcheckPath = "/"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+
+[env]
+NODE_ENV = "production"
+PORT = "3000"

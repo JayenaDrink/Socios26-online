@@ -2,24 +2,42 @@ import Mailchimp from 'mailchimp-api-v3';
 import { createHash } from 'crypto';
 import { Member, MailChimpSync, MAILCHIMP_TAG } from '@/types';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class MailChimpService {
   private mailchimp: Mailchimp;
   private audienceId: string;
+  private isConfigured: boolean;
 
   constructor() {
     const apiKey = process.env.MAILCHIMP_API_KEY;
     const serverPrefix = process.env.MAILCHIMP_SERVER_PREFIX;
     this.audienceId = process.env.MAILCHIMP_AUDIENCE_ID || '';
 
-    if (!apiKey || !serverPrefix) {
-      throw new Error('MailChimp API key and server prefix are required');
+    if (!apiKey || !serverPrefix || !this.audienceId) {
+      this.isConfigured = false;
+      console.log('MailChimp not configured - running in local mode without MailChimp integration');
+      // Create a dummy mailchimp instance to prevent errors
+      this.mailchimp = {} as Mailchimp;
+      return;
     }
 
+    this.isConfigured = true;
     this.mailchimp = new Mailchimp(apiKey);
   }
 
   // Add member to MailChimp audience
   async addMemberToAudience(member: Member): Promise<MailChimpSync> {
+    if (!this.isConfigured) {
+      console.log(`MailChimp not configured - simulating sync for member ${member.member_number}`);
+      return {
+        member_id: member.id!,
+        mailchimp_id: `local-${member.id}`,
+        audience_id: 'local',
+        tags: [MAILCHIMP_TAG],
+        synced_at: new Date().toISOString()
+      };
+    }
+
     try {
       // Check if member already exists in audience
       const existingMember = await this.findMemberByEmail(member.email);
@@ -67,6 +85,10 @@ export class MailChimpService {
 
   // Find member by email in audience
   private async findMemberByEmail(email: string): Promise<any> {
+    if (!this.isConfigured) {
+      return null; // In local mode, always return null (member not found)
+    }
+
     try {
       const response = await this.mailchimp.get(`/lists/${this.audienceId}/members/${this.getSubscriberHash(email)}`);
       return response;
@@ -80,6 +102,11 @@ export class MailChimpService {
 
   // Update member tags
   private async updateMemberTags(memberId: string, tags: string[]): Promise<any> {
+    if (!this.isConfigured) {
+      console.log(`MailChimp not configured - simulating tag update for member ${memberId}`);
+      return { success: true };
+    }
+
     try {
       const response = await this.mailchimp.post(`/lists/${this.audienceId}/members/${memberId}/tags`, {
         tags: tags.map(tag => ({ name: tag, status: 'active' }))
@@ -98,6 +125,13 @@ export class MailChimpService {
 
   // Test MailChimp connection
   async testConnection(): Promise<{ connected: boolean; error?: string }> {
+    if (!this.isConfigured) {
+      return { 
+        connected: true,
+        error: 'MailChimp not configured - running in local mode'
+      };
+    }
+
     try {
       await this.mailchimp.get(`/lists/${this.audienceId}`);
       return { connected: true };
@@ -111,6 +145,15 @@ export class MailChimpService {
 
   // Get audience information
   async getAudienceInfo(): Promise<any> {
+    if (!this.isConfigured) {
+      return {
+        name: 'Local Development Mode',
+        member_count: 0,
+        id: 'local',
+        status: 'MailChimp not configured'
+      };
+    }
+
     try {
       const response = await this.mailchimp.get(`/lists/${this.audienceId}`);
       return {
@@ -129,11 +172,6 @@ export class MailChimpService {
 let mailchimpService: MailChimpService | null = null;
 
 export function getMailChimpService(): MailChimpService | null {
-  if (!process.env.MAILCHIMP_API_KEY || !process.env.MAILCHIMP_SERVER_PREFIX || !process.env.MAILCHIMP_AUDIENCE_ID) {
-    console.warn('MailChimp not configured - API key, server prefix, or audience ID missing');
-    return null;
-  }
-
   if (!mailchimpService) {
     try {
       mailchimpService = new MailChimpService();

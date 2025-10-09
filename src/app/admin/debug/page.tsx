@@ -1,14 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import AdminLayout from '@/components/AdminLayout';
 
 interface DebugResult {
   success: boolean;
   headers?: string[];
   headerMapping?: Record<string, number>;
-  sampleData?: any[][];
+  sampleData?: string[][];
   error?: string;
 }
 

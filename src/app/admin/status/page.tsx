@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import AdminLayout from '@/components/AdminLayout';
 
 interface DatabaseStatus {

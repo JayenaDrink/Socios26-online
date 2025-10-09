@@ -2,14 +2,15 @@ import { createClient } from '@supabase/supabase-js';
 import { Member } from '@/types';
 import { getMailChimpService } from './mailchimp';
 
+// Online version - Only use Supabase
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Missing Supabase environment variables. Please check your .env.local file.');
+  throw new Error('Missing Supabase environment variables. Please check your environment configuration.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export class DatabaseService {
   // Get all members from 2025 table
@@ -237,6 +238,9 @@ export class DatabaseService {
     }
   }
 }
+
+// Export supabase client
+export { supabase };
 
 // Singleton instance
 let databaseService: DatabaseService | null = null;

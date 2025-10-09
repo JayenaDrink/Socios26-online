@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import { Member } from '@/types';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class ExcelService {
   // Parse Excel file buffer to array of members
   parseExcelToMembers(buffer: Buffer): Member[] {
