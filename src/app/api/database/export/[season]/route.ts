@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabaseService, SEASON_TABLES, Season } from '@/lib/supabase';
 import * as XLSX from 'xlsx';
+import { MEMBER_FIELDS } from '@/types';
 
 // GET /api/database/export/2026 -> socios_2627
 // GET /api/database/export/2027 -> members27
@@ -21,18 +22,17 @@ export async function GET(
     const database = getDatabaseService();
     const members = await database.getSeasonMembers(season as Season);
 
-    const exportData = members.map(member => ({
-      member_number: member.member_number,
-      first_name: member.first_name,
-      last_name: member.last_name,
-      email: member.email,
-      phone: member.phone
-    }));
+    const exportData = members.map(member =>
+      Object.fromEntries(MEMBER_FIELDS.map(f => {
+        const v = (member as unknown as Record<string, unknown>)[f];
+        return [f, f === 'resident' ? (v === true ? 'yes' : v === false ? 'no' : '') : v ?? ''];
+      }))
+    );
 
     const workbook = XLSX.utils.book_new();
     const worksheet = exportData.length
       ? XLSX.utils.json_to_sheet(exportData)
-      : XLSX.utils.aoa_to_sheet([['member_number', 'first_name', 'last_name', 'email', 'phone']]);
+      : XLSX.utils.aoa_to_sheet([[...MEMBER_FIELDS]]);
     XLSX.utils.book_append_sheet(workbook, worksheet, `Members ${season}`);
 
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });

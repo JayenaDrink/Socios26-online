@@ -35,17 +35,32 @@
   "memberForm": {
     "title": "Agregar Nuevo Socio",
     "firstName": "Nombre",
-    "lastName": "Apellido",
+    "lastName": "Apellidos",
     "memberNumber": "Número de socio",
-    "phone": "Número de teléfono",
-    "email": "Dirección de correo electrónico",
-    "amountPaid": "Cantidad pagada",
+    "phone": "Teléfono",
+    "email": "Correo electrónico",
+    "amountPaid": "Pagado (€)",
     "amountOptions": {
       "35": "€35 (Estándar)",
       "20": "€20 (Reducción)"
     },
     "submitButton": "Agregar Socio",
-    "required": "Campo obligatorio"
+    "required": "Obligatorio",
+    "memberNumberAuto": "Se asigna automáticamente",
+    "spouseCompanion": "Cónyuge o acompañante",
+    "resident": "Residente",
+    "yes": "Sí",
+    "no": "No",
+    "nationality": "Nacionalidad",
+    "birthPlace": "Nacido/a en",
+    "birthDate": "El día",
+    "address": "Dirección",
+    "sosContact": "SOS – Persona de contacto (nombre)",
+    "registrationDate": "Fecha",
+    "sectionPersonal": "Datos personales",
+    "sectionContact": "Contacto",
+    "sectionMembership": "Cuota",
+    "assignedNumber": "Número de socio asignado"
   },
   "messages": {
     "memberAdded": "Socio agregado exitosamente",
@@ -79,5 +94,17 @@
     "database2027": "Socios 2027",
     "added": "Socio agregado a la lista",
     "required": "Obligatorio"
+  },
+  "home": {
+    "subtitle": "Gestión de socios",
+    "addDescription": "Dar de alta un nuevo socio en el club"
+  },
+  "pdf": {
+    "title": "Formulario de inscripción",
+    "signature": "Firma",
+    "generated": "Generado el",
+    "download": "Descargar PDF",
+    "print": "Imprimir",
+    "button": "PDF"
   }
 }

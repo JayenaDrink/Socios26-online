@@ -16,7 +16,7 @@ export default function Home() {
             {t('navigation.title')}
           </h1>
           <p className="text-lg text-gray-600 mb-8">
-            Système de gestion des membres 2026
+            {t('home.subtitle')}
           </p>
         </div>
 
@@ -43,7 +43,7 @@ export default function Home() {
               {t('navigation.addMember')}
             </h2>
             <p className="text-gray-600 mb-4">
-              Ajouter un nouveau membre au club
+              {t('home.addDescription')}
             </p>
             <Link href="/add" className="block">
               <button className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors">

@@ -42,3 +42,6 @@ next-env.d.ts
 
 # local backups made while editing
 _backup_*/
+
+# files generated with Claude (member data, never commit)
+Claude outputs/

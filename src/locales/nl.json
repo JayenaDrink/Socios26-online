@@ -35,17 +35,32 @@
   "memberForm": {
     "title": "Nieuw Lid Toevoegen",
     "firstName": "Voornaam",
-    "lastName": "Achternaam",
+    "lastName": "Naam",
     "memberNumber": "Lidnummer",
-    "phone": "Telefoonnummer",
-    "email": "E-mailadres",
-    "amountPaid": "Betaald Bedrag",
+    "phone": "Telefoon",
+    "email": "E-mail",
+    "amountPaid": "Betaald (€)",
     "amountOptions": {
       "35": "€35 (Standaard)",
       "20": "€20 (Reductie)"
     },
     "submitButton": "Lid Toevoegen",
-    "required": "Verplicht veld"
+    "required": "Verplicht",
+    "memberNumberAuto": "Wordt automatisch toegekend",
+    "spouseCompanion": "Echtgeno(o)t(e) of samen met",
+    "resident": "Resident",
+    "yes": "Ja",
+    "no": "Nee",
+    "nationality": "Nationaliteit",
+    "birthPlace": "Geboren te",
+    "birthDate": "Op",
+    "address": "Adres",
+    "sosContact": "SOS: wie contacteren (naam)",
+    "registrationDate": "Datum",
+    "sectionPersonal": "Persoonlijke gegevens",
+    "sectionContact": "Contact",
+    "sectionMembership": "Lidgeld",
+    "assignedNumber": "Toegekend lidnummer"
   },
   "messages": {
     "memberAdded": "Lid succesvol toegevoegd",
@@ -79,5 +94,17 @@
     "database2027": "2027 Leden",
     "added": "Lid toegevoegd aan de lijst",
     "required": "Verplicht"
+  },
+  "home": {
+    "subtitle": "Ledenbeheer",
+    "addDescription": "Een nieuw lid toevoegen aan de club"
+  },
+  "pdf": {
+    "title": "Inschrijvingsformulier",
+    "signature": "Handtekening",
+    "generated": "Aangemaakt op",
+    "download": "PDF downloaden",
+    "print": "Afdrukken",
+    "button": "PDF"
   }
 }

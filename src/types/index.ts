@@ -72,8 +72,26 @@ export interface SeasonMember {
   last_name: string | null;
   email: string | null;
   phone: string | null;
+  spouse_companion?: string | null;
+  resident?: boolean | null;
+  nationality?: string | null;
+  birth_place?: string | null;
+  birth_date?: string | null;
+  address?: string | null;
+  sos_contact_name?: string | null;
+  amount_paid?: number | null;
+  registration_date?: string | null;
   created_at?: string;
   in_2027?: boolean;
 }
 
-export type SeasonMemberFields = Pick<SeasonMember, 'member_number' | 'first_name' | 'last_name' | 'email' | 'phone'>;
+// Columns that can be filled in by the app (everything except id/created_at)
+export const MEMBER_FIELDS = [
+  'member_number', 'first_name', 'last_name', 'spouse_companion', 'resident', 'nationality',
+  'birth_place', 'birth_date', 'address', 'phone', 'email', 'sos_contact_name',
+  'amount_paid', 'registration_date',
+] as const;
+export type MemberField = typeof MEMBER_FIELDS[number];
+
+export type SeasonMemberFields = Pick<SeasonMember, 'member_number' | 'first_name' | 'last_name' | 'email' | 'phone'> &
+  Partial<Pick<SeasonMember, MemberField>>;

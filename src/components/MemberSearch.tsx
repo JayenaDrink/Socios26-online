@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SeasonMember, SeasonMemberFields } from '@/types';
+import { SeasonMember } from '@/types';
+import MemberFormFields, { EMPTY_MEMBER_FORM, MemberFormValues, memberToForm } from '@/components/MemberFormFields';
 
 interface SearchResults {
   searchCriteria: { member_number?: string; email?: string };
@@ -10,10 +11,9 @@ interface SearchResults {
   count: number;
 }
 
-const EDIT_FIELDS: (keyof SeasonMemberFields)[] = ['member_number', 'first_name', 'last_name', 'email', 'phone'];
 
 export default function MemberSearch() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [searchCriteria, setSearchCriteria] = useState({ member_number: '', email: '' });
   const [searchResults, setSearchResults] = useState<SearchResults | null>(null);
   const [loading, setLoading] = useState(false);
@@ -21,17 +21,7 @@ export default function MemberSearch() {
   const [notice, setNotice] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editForm, setEditForm] = useState<SeasonMemberFields>({
-    member_number: '', first_name: '', last_name: '', email: '', phone: ''
-  });
-
-  const fieldLabel = (f: keyof SeasonMemberFields) => ({
-    member_number: t('addMember.memberNumber'),
-    first_name: t('addMember.firstName'),
-    last_name: t('addMember.lastName'),
-    email: t('addMember.email'),
-    phone: t('addMember.phone')
-  })[f];
+  const [editForm, setEditForm] = useState<MemberFormValues>(EMPTY_MEMBER_FORM);
 
   const replaceMember = (updated: SeasonMember) => {
     if (!searchResults) return;
@@ -100,13 +90,7 @@ export default function MemberSearch() {
     setError(null);
     setNotice(null);
     setEditingId(member.id);
-    setEditForm({
-      member_number: member.member_number ?? '',
-      first_name: member.first_name ?? '',
-      last_name: member.last_name ?? '',
-      email: member.email ?? '',
-      phone: member.phone ?? ''
-    });
+    setEditForm(memberToForm(member as unknown as Record<string, unknown>));
   };
 
   const handleSave = async (member: SeasonMember) => {
@@ -206,19 +190,7 @@ export default function MemberSearch() {
                 <div key={member.id} className="border border-gray-200 rounded-lg p-4">
                   {editingId === member.id ? (
                     <div className="space-y-3">
-                      <div className="grid md:grid-cols-2 gap-3">
-                        {EDIT_FIELDS.map((f) => (
-                          <div key={f}>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">{fieldLabel(f)}</label>
-                            <input
-                              type={f === 'email' ? 'email' : f === 'phone' ? 'tel' : 'text'}
-                              value={editForm[f] ?? ''}
-                              onChange={(e) => setEditForm({ ...editForm, [f]: e.target.value })}
-                              className={inputClass}
-                            />
-                          </div>
-                        ))}
-                      </div>
+                      <MemberFormFields values={editForm} onChange={setEditForm} memberNumberMode="edit" />
                       <div className="flex gap-2 justify-end">
                         <button
                           onClick={() => setEditingId(null)}
@@ -260,6 +232,14 @@ export default function MemberSearch() {
                             {busyId === member.id ? t('common.loading') : t('memberSearch.transferButton')}
                           </button>
                         )}
+                        <a
+                          href={`/api/database/member-pdf?season=2026&id=${member.id}&lang=${(i18n.language || 'es').slice(0, 2)}`}
+                          target="_blank"
+                          rel="noopener"
+                          className="bg-white border border-gray-400 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50 transition-colors"
+                        >
+                          {t('pdf.button')}
+                        </a>
                         <button
                           onClick={() => startEdit(member)}
                           disabled={busyId === member.id}

@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { Member, SeasonMember, SeasonMemberFields, SEASON_TAGS, MailchimpResult } from '@/types';
+import { Member, SeasonMember, SeasonMemberFields, SEASON_TAGS, MailchimpResult, MEMBER_FIELDS } from '@/types';
 import { getMailChimpService } from './mailchimp';
 
 // Server-only Supabase client. This file must only be imported from API routes.
@@ -92,13 +92,10 @@ export class DatabaseService {
       .from(SEASON_TABLES['2026']).select('*').eq('id', id).single();
     if (srcError || !source) throw new Error('Member not found in 2026 list');
 
-    const fields: SeasonMemberFields = {
-      member_number: source.member_number,
-      first_name: source.first_name,
-      last_name: source.last_name,
-      email: source.email,
-      phone: source.phone
-    };
+    // Copy every data column (keeps the member number)
+    const fields = Object.fromEntries(
+      MEMBER_FIELDS.map(f => [f, source[f] ?? null])
+    ) as SeasonMemberFields;
 
     if (await this.findIn2027(fields)) throw new Error('Member already exists in 2027 list');
 
@@ -157,6 +154,8 @@ export class DatabaseService {
   // Add a new member to a season table (rejects a member number already in that table)
   async addSeasonMember(season: Season, fields: SeasonMemberFields): Promise<{ member: SeasonMember; mailchimp: MailchimpResult }> {
     const table = SEASON_TABLES[season];
+    // No member number given: the database assigns the next one (sequence from 9000)
+    if (!fields.member_number) delete (fields as Partial<SeasonMemberFields>).member_number;
     if (fields.member_number) {
       const { data: existing, error: exError } = await supabase
         .from(table).select('id').eq('member_number', fields.member_number).limit(1);
@@ -169,6 +168,13 @@ export class DatabaseService {
     // Mailchimp: tag with the season tag (a 2027 member also loses the 2026 tag)
     const mailchimp = await syncSeasonTags(season, fields);
     return { member: data as SeasonMember, mailchimp };
+  }
+
+  // One row of a season table by id
+  async getSeasonMemberById(season: Season, id: number): Promise<SeasonMember | null> {
+    const { data, error } = await supabase.from(SEASON_TABLES[season]).select('*').eq('id', id).maybeSingle();
+    if (error) throw new Error(`Failed to read member: ${error.message}`);
+    return (data as SeasonMember) || null;
   }
 
   // Count rows in a season table

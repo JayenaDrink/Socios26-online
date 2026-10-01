@@ -35,17 +35,32 @@
   "memberForm": {
     "title": "Ajouter Nouveau Membre",
     "firstName": "Prénom",
-    "lastName": "Nom de famille",
+    "lastName": "Nom",
     "memberNumber": "Numéro de membre",
-    "phone": "Numéro de téléphone",
-    "email": "Adresse e-mail",
-    "amountPaid": "Montant payé",
+    "phone": "Téléphone",
+    "email": "E-mail",
+    "amountPaid": "Payé (€)",
     "amountOptions": {
       "35": "€35 (Standard)",
       "20": "€20 (Réduction)"
     },
     "submitButton": "Ajouter Membre",
-    "required": "Champ obligatoire"
+    "required": "Obligatoire",
+    "memberNumberAuto": "Attribué automatiquement",
+    "spouseCompanion": "Conjoint ou avec",
+    "resident": "Résident",
+    "yes": "Oui",
+    "no": "Non",
+    "nationality": "Nationalité",
+    "birthPlace": "Né(e) à",
+    "birthDate": "Le",
+    "address": "Adresse",
+    "sosContact": "SOS : qui contacter (nom)",
+    "registrationDate": "Date",
+    "sectionPersonal": "Données personnelles",
+    "sectionContact": "Contact",
+    "sectionMembership": "Cotisation",
+    "assignedNumber": "Numéro de membre attribué"
   },
   "messages": {
     "memberAdded": "Membre ajouté avec succès",
@@ -79,5 +94,17 @@
     "database2027": "Membres 2027",
     "added": "Membre ajouté à la liste",
     "required": "Obligatoire"
+  },
+  "home": {
+    "subtitle": "Gestion des membres",
+    "addDescription": "Ajouter un nouveau membre au club"
+  },
+  "pdf": {
+    "title": "Formulaire d'inscription",
+    "signature": "Signature",
+    "generated": "Généré le",
+    "download": "Télécharger PDF",
+    "print": "Imprimer",
+    "button": "PDF"
   }
 }
