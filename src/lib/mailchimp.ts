@@ -1,6 +1,6 @@
 import Mailchimp from 'mailchimp-api-v3';
 import { createHash } from 'crypto';
-import { Member, MailChimpSync, MAILCHIMP_TAG } from '@/types';
+import { Member, MailChimpSync, MAILCHIMP_TAG, SeasonMemberFields, MailchimpResult } from '@/types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class MailChimpService {
@@ -118,6 +118,123 @@ export class MailChimpService {
     }
   }
 
+  // Create or update a contact and set its tags.
+  // addTags become active, removeTags become inactive. Never throws: returns { ok, error }.
+  async syncContact(member: SeasonMemberFields, addTags: string[], removeTags: string[] = []): Promise<MailchimpResult> {
+    const email = (member.email || '').trim();
+    if (!this.isConfigured) return { ok: false, skipped: true, error: 'MailChimp not configured' };
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || /^(sin@correo\.com|nocorreo@gmail\.com)$/i.test(email)) {
+      return { ok: false, skipped: true, error: 'No valid email, contact not sent to MailChimp' };
+    }
+
+    const hash = this.getSubscriberHash(email);
+    const path = `/lists/${this.audienceId}/members/${hash}`;
+    const mergeFields: Record<string, string> = {};
+    if (member.first_name) mergeFields.FNAME = member.first_name;
+    if (member.last_name) mergeFields.LNAME = member.last_name;
+
+    const describe = (error: unknown) => {
+      const e = error as { status?: number; title?: string; detail?: string; message?: string };
+      const msg = e?.detail || e?.title || e?.message || 'Unknown MailChimp error';
+      return e?.status ? `${e.status} - ${msg}` : msg;
+    };
+
+    try {
+      // Upsert: keeps existing subscription status, subscribes new contacts
+      try {
+        await this.mailchimp.put(path, {
+          email_address: email,
+          status_if_new: 'subscribed',
+          merge_fields: member.phone ? { ...mergeFields, PHONE: member.phone } : mergeFields
+        });
+      } catch (error) {
+        // Retry without the phone in case the audience rejects its format
+        if (!member.phone) throw error;
+        console.warn('MailChimp rejected contact with phone, retrying without it:', describe(error));
+        await this.mailchimp.put(path, { email_address: email, status_if_new: 'subscribed', merge_fields: mergeFields });
+      }
+
+      const tags = [
+        ...addTags.map(name => ({ name, status: 'active' })),
+        ...removeTags.map(name => ({ name, status: 'inactive' }))
+      ];
+      if (tags.length) await this.mailchimp.post(`${path}/tags`, { tags });
+
+      return { ok: true };
+    } catch (error) {
+      const msg = describe(error);
+      console.error(`MailChimp sync failed for ${email}:`, msg);
+      return { ok: false, error: msg };
+    }
+  }
+
+  // Apply an edit to an existing contact.
+  // If the email changed, the contact keeps its history and tags under the new email.
+  // If the contact does not exist in Mailchimp yet, it is created with fallbackTags.
+  async updateContact(
+    oldEmail: string | null,
+    updated: SeasonMemberFields,
+    fallbackAdd: string[],
+    fallbackRemove: string[] = []
+  ): Promise<MailchimpResult> {
+    if (!this.isConfigured) return { ok: false, skipped: true, error: 'MailChimp not configured' };
+
+    const validEmail = (e: string | null | undefined) =>
+      !!e && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e.trim()) && !/^(sin@correo\.com|nocorreo@gmail\.com)$/i.test(e.trim());
+    const newEmail = (updated.email || '').trim();
+    const prevEmail = (oldEmail || '').trim();
+
+    if (!validEmail(newEmail)) return { ok: false, skipped: true, error: 'No valid email, contact not sent to MailChimp' };
+
+    const mergeFields: Record<string, string> = {};
+    if (updated.first_name) mergeFields.FNAME = updated.first_name;
+    if (updated.last_name) mergeFields.LNAME = updated.last_name;
+    if (updated.phone) mergeFields.PHONE = updated.phone;
+
+    const describe = (error: unknown) => {
+      const e = error as { status?: number; title?: string; detail?: string; message?: string };
+      const msg = e?.detail || e?.title || e?.message || 'Unknown MailChimp error';
+      return e?.status ? `${e.status} - ${msg}` : msg;
+    };
+    const statusOf = (error: unknown) => (error as { status?: number })?.status;
+
+    // Patch the contact found under `email`; returns false if it does not exist
+    const patch = async (email: string, body: Record<string, unknown>) => {
+      try {
+        await this.mailchimp.patch(`/lists/${this.audienceId}/members/${this.getSubscriberHash(email)}`, body);
+        return true;
+      } catch (error) {
+        if (statusOf(error) === 404) return false;
+        // Retry without phone if its format is rejected
+        if (body.merge_fields && (body.merge_fields as Record<string, string>).PHONE) {
+          const { PHONE: _phone, ...rest } = body.merge_fields as Record<string, string>;
+          void _phone;
+          await this.mailchimp.patch(`/lists/${this.audienceId}/members/${this.getSubscriberHash(email)}`, { ...body, merge_fields: rest });
+          return true;
+        }
+        throw error;
+      }
+    };
+
+    try {
+      const emailChanged = validEmail(prevEmail) && prevEmail.toLowerCase() !== newEmail.toLowerCase();
+
+      if (emailChanged) {
+        // Move the existing contact to the new email (keeps tags and history)
+        if (await patch(prevEmail, { email_address: newEmail, merge_fields: mergeFields })) return { ok: true };
+      } else {
+        if (await patch(newEmail, { merge_fields: mergeFields })) return { ok: true };
+      }
+
+      // Not in Mailchimp under the old/current email: create it with the season tags
+      return await this.syncContact(updated, fallbackAdd, fallbackRemove);
+    } catch (error) {
+      const msg = describe(error);
+      console.error(`MailChimp update failed for ${prevEmail || newEmail}:`, msg);
+      return { ok: false, error: msg };
+    }
+  }
+
   // Get subscriber hash for email (required by MailChimp API)
   private getSubscriberHash(email: string): string {
     return createHash('md5').update(email.toLowerCase()).digest('hex');
@@ -136,9 +253,12 @@ export class MailChimpService {
       await this.mailchimp.get(`/lists/${this.audienceId}`);
       return { connected: true };
     } catch (error) {
+      // mailchimp-api-v3 rejects with a plain object ({ status, title, detail }), not an Error
+      const e = error as { status?: number; title?: string; detail?: string; message?: string };
+      const msg = e?.detail || e?.title || e?.message || 'Failed to connect to MailChimp';
       return {
         connected: false,
-        error: error instanceof Error ? error.message : 'Failed to connect to MailChimp'
+        error: e?.status ? `${e.status} - ${msg}` : msg
       };
     }
   }

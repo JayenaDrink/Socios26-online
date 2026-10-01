@@ -18,14 +18,19 @@
     "dashboard": "Dashboard"
   },
   "memberSearch": {
-    "title": "Zoek Lid uit 2025 Lijst",
-    "description": "Zoek een bestaand lid op lidnummer of e-mailadres",
+    "title": "Zoek Lid (lijst 2026)",
+    "description": "Zoek een lid uit de lijst 2026 op lidnummer of e-mailadres",
     "memberNumber": "Lidnummer",
     "email": "E-mailadres",
     "searchButton": "Zoek Lid",
     "noResults": "Geen leden gevonden",
     "foundMember": "Lid gevonden",
-    "transferButton": "Overzetten naar 2026"
+    "transferButton": "Migreren naar 27",
+    "editButton": "Bewerken",
+    "alreadyIn2027": "Al in 2027",
+    "migrated": "Lid gemigreerd naar 2027",
+    "saved": "Wijzigingen opgeslagen",
+    "saving": "Opslaan..."
   },
   "memberForm": {
     "title": "Nieuw Lid Toevoegen",
@@ -52,8 +57,8 @@
   },
   "addMember": {
     "title": "Nieuw Lid Toevoegen",
-    "description": "Voeg handmatig individuele leden toe aan uw database. Kies de doeldatabase en of u wilt synchroniseren met MailChimp.",
-    "targetDatabase": "Doeldatabase",
+    "description": "Voer de gegevens van een nieuw lid in en kies de lijst.",
+    "targetDatabase": "Lijst",
     "database2025": "2025 Leden",
     "database2026": "2026 Leden",
     "mailchimpSync": "Wordt gesynchroniseerd met MailChimp",
@@ -70,6 +75,9 @@
     "amountPaid": "Betaald Bedrag",
     "addButton": "Lid Toevoegen",
     "adding": "Lid toevoegen...",
-    "willSync": "Wordt gesynchroniseerd met MailChimp"
+    "willSync": "Wordt gesynchroniseerd met MailChimp",
+    "database2027": "2027 Leden",
+    "added": "Lid toegevoegd aan de lijst",
+    "required": "Verplicht"
   }
 }

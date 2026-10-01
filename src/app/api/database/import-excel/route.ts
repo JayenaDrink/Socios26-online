@@ -5,7 +5,7 @@ import { getExcelService } from '@/lib/excelService';
 export async function POST(request: NextRequest) {
   try {
     // Check if Supabase is configured
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    if (!(process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL)) {
       return NextResponse.json(
         { 
           success: false, 

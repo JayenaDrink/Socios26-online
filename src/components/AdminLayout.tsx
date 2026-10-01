@@ -24,6 +24,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     return null;
   }
 
+  const logout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST', cache: 'no-store' });
+    window.location.href = '/login';
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -39,15 +44,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <nav className="hidden md:flex space-x-6">
                 <Link href="/admin" className="text-red-100 hover:text-white transition-colors">
                   Dashboard
-                </Link>
-                <Link href="/admin/import" className="text-red-100 hover:text-white transition-colors">
-                  Import Data
-                </Link>
-                <Link href="/admin/debug" className="text-red-100 hover:text-white transition-colors">
-                  Debug Excel
-                </Link>
-                <Link href="/admin/status" className="text-red-100 hover:text-white transition-colors">
-                  System Status
                 </Link>
               </nav>
             </div>
@@ -71,6 +67,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               >
                 ← Back to User View
               </Link>
+
+              <button onClick={logout} className="text-sm text-red-100 hover:text-white transition-colors">
+                Salir
+              </button>
             </div>
           </div>
         </div>

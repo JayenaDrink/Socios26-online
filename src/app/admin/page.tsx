@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
-import Link from 'next/link';
 
 interface DatabaseStatus {
   connected: boolean;
   files?: {
-    list2025?: { name: string; count: number };
     list2026?: { name: string; count: number };
+    list2027?: { name: string; count: number };
   };
   error?: string;
 }
@@ -36,15 +35,15 @@ export default function AdminDashboard() {
 
   const checkDatabaseStatus = async () => {
     try {
-      const response = await fetch('/api/database/status');
+      const response = await fetch('/api/database/status', { cache: 'no-store' });
       const data = await response.json();
       
       if (data.success) {
         setDbStatus({
           connected: data.data.connected,
           files: {
-            list2025: { name: 'Members 2025', count: data.data.tables?.members_2025 || 0 },
-            list2026: { name: 'Members 2026', count: data.data.tables?.members_2026 || 0 }
+            list2026: { name: 'Members 2026', count: data.data.tables?.members_2026 || 0 },
+            list2027: { name: 'Members 2027', count: data.data.tables?.members_2027 || 0 }
           }
         });
       } else {
@@ -63,7 +62,7 @@ export default function AdminDashboard() {
 
   const checkMailChimpStatus = async () => {
     try {
-      const response = await fetch('/api/mailchimp/status');
+      const response = await fetch('/api/mailchimp/status', { cache: 'no-store' });
       const data = await response.json();
       setMailchimpStatus(data);
     } catch {
@@ -90,13 +89,13 @@ export default function AdminDashboard() {
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">2025</span>
+                  <span className="text-white text-sm font-medium">2026</span>
                 </div>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">2025 Members</p>
+                <p className="text-sm font-medium text-gray-500">2026 Members</p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  {dbStatus.files?.list2025?.count || 0}
+                  {dbStatus.files?.list2026?.count || 0}
                 </p>
               </div>
             </div>
@@ -106,13 +105,13 @@ export default function AdminDashboard() {
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">2026</span>
+                  <span className="text-white text-sm font-medium">2027</span>
                 </div>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">2026 Members</p>
+                <p className="text-sm font-medium text-gray-500">2027 Members</p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  {dbStatus.files?.list2026?.count || 0}
+                  {dbStatus.files?.list2027?.count || 0}
                 </p>
               </div>
             </div>
@@ -138,25 +137,10 @@ export default function AdminDashboard() {
         </div>
 
         {/* Admin Tools */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Link href="/admin/import" className="group">
-            <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
-                    <span className="text-blue-600 text-xl">📊</span>
-                  </div>
-                </div>
-                <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900 group-hover:text-blue-600">Import Data</h3>
-                  <p className="text-sm text-gray-500">Upload Excel files to import members</p>
-                </div>
-              </div>
-            </div>
-          </Link>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
           <button 
-            onClick={() => window.open('/api/database/export-2025', '_blank')}
+            onClick={() => window.open('/api/database/export/2026', '_blank')}
             className="group w-full"
           >
             <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
@@ -167,15 +151,15 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900 group-hover:text-purple-600">Export 2025</h3>
-                  <p className="text-sm text-gray-500">Download 2025 members as Excel file</p>
+                  <h3 className="text-lg font-medium text-gray-900 group-hover:text-purple-600">Export 2026</h3>
+                  <p className="text-sm text-gray-500">Download 2026 members as Excel file</p>
                 </div>
               </div>
             </div>
           </button>
 
           <button 
-            onClick={() => window.open('/api/database/export-2026', '_blank')}
+            onClick={() => window.open('/api/database/export/2027', '_blank')}
             className="group w-full"
           >
             <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
@@ -186,44 +170,14 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900 group-hover:text-indigo-600">Export 2026</h3>
-                  <p className="text-sm text-gray-500">Download 2026 members as Excel file</p>
+                  <h3 className="text-lg font-medium text-gray-900 group-hover:text-indigo-600">Export 2027</h3>
+                  <p className="text-sm text-gray-500">Download 2027 members as Excel file</p>
                 </div>
               </div>
             </div>
           </button>
 
-          <Link href="/admin/debug" className="group">
-            <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center group-hover:bg-yellow-200 transition-colors">
-                    <span className="text-yellow-600 text-xl">🔍</span>
-                  </div>
-                </div>
-                <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900 group-hover:text-yellow-600">Debug Excel</h3>
-                  <p className="text-sm text-gray-500">Analyze Excel file structure and format</p>
-                </div>
-              </div>
-            </div>
-          </Link>
 
-          <Link href="/admin/status" className="group">
-            <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                    <span className="text-green-600 text-xl">⚙️</span>
-                  </div>
-                </div>
-                <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900 group-hover:text-green-600">System Status</h3>
-                  <p className="text-sm text-gray-500">Check database and MailChimp connections</p>
-                </div>
-              </div>
-            </div>
-          </Link>
         </div>
 
         {/* System Status Overview */}
@@ -263,6 +217,9 @@ export default function AdminDashboard() {
                  mailchimpStatus.configured ? 'Configured' : 'Not Configured'}
               </span>
             </div>
+            {!mailchimpStatus.connected && mailchimpStatus.error && (
+              <p className="text-xs text-red-600 break-all">{mailchimpStatus.error}</p>
+            )}
           </div>
         </div>
       </div>

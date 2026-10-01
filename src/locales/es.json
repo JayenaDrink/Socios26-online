@@ -18,14 +18,19 @@
     "dashboard": "Panel de Control"
   },
   "memberSearch": {
-    "title": "Buscar Socio de la Lista 2025",
-    "description": "Buscar un socio existente por número de socio o dirección de correo electrónico",
+    "title": "Buscar Socio (lista 2026)",
+    "description": "Buscar un socio de la lista 2026 por número de socio o correo electrónico",
     "memberNumber": "Número de socio",
     "email": "Dirección de correo electrónico",
     "searchButton": "Buscar Socio",
     "noResults": "No se encontraron socios",
     "foundMember": "Socio encontrado",
-    "transferButton": "Transferir a 2026"
+    "transferButton": "Migrar a 27",
+    "editButton": "Editar",
+    "alreadyIn2027": "Ya está en 2027",
+    "migrated": "Socio migrado a 2027",
+    "saved": "Cambios guardados",
+    "saving": "Guardando..."
   },
   "memberForm": {
     "title": "Agregar Nuevo Socio",
@@ -52,8 +57,8 @@
   },
   "addMember": {
     "title": "Agregar Nuevo Socio",
-    "description": "Agregue manualmente socios individuales a su base de datos. Elija la base de datos objetivo y si desea sincronizar con MailChimp.",
-    "targetDatabase": "Base de Datos Objetivo",
+    "description": "Cargue los datos de un socio nuevo y elija en qué lista guardarlo.",
+    "targetDatabase": "Lista",
     "database2025": "Socios 2025",
     "database2026": "Socios 2026",
     "mailchimpSync": "Se sincronizará con MailChimp",
@@ -70,6 +75,9 @@
     "amountPaid": "Cantidad Pagada",
     "addButton": "Agregar Socio",
     "adding": "Agregando socio...",
-    "willSync": "Se sincronizará con MailChimp"
+    "willSync": "Se sincronizará con MailChimp",
+    "database2027": "Socios 2027",
+    "added": "Socio agregado a la lista",
+    "required": "Obligatorio"
   }
 }

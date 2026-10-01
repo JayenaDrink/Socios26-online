@@ -51,3 +51,29 @@ export const SUPPORTED_LANGUAGES: Language[] = [
 export const DEFAULT_AMOUNTS = [35, 20] as const;
 export const MAILCHIMP_AUDIENCE_NAME = 'Belgas 2026';
 export const MAILCHIMP_TAG = 'Activos 25-26';
+
+// Mailchimp tag per season list (existing audience tag is "Activos 25-26")
+export const SEASON_TAGS = {
+  '2026': 'Activos 25-26',
+  '2027': 'Activos 26-27',
+} as const;
+
+export interface MailchimpResult {
+  ok: boolean;
+  skipped?: boolean;
+  error?: string;
+}
+
+// Row in a season table (socios_2627 / members27)
+export interface SeasonMember {
+  id: number;
+  member_number: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  phone: string | null;
+  created_at?: string;
+  in_2027?: boolean;
+}
+
+export type SeasonMemberFields = Pick<SeasonMember, 'member_number' | 'first_name' | 'last_name' | 'email' | 'phone'>;

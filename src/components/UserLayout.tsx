@@ -24,6 +24,11 @@ export default function UserLayout({ children }: UserLayoutProps) {
     return null;
   }
 
+  const logout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST', cache: 'no-store' });
+    window.location.href = '/login';
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -65,6 +70,10 @@ export default function UserLayout({ children }: UserLayoutProps) {
               >
                 Admin
               </Link>
+
+              <button onClick={logout} className="text-sm text-gray-500 hover:text-gray-700 transition-colors">
+                Salir
+              </button>
             </div>
           </div>
         </div>

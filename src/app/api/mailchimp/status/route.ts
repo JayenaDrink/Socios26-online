@@ -14,6 +14,7 @@ export async function GET() {
     }
 
     const connectionTest = await mailchimp.testConnection();
+    if (!connectionTest.connected) console.error('MailChimp connection failed:', connectionTest.error);
     
     if (connectionTest.connected) {
       const audienceInfo = await mailchimp.getAudienceInfo();

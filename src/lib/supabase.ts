@@ -1,18 +1,191 @@
 import { createClient } from '@supabase/supabase-js';
-import { Member } from '@/types';
+import { Member, SeasonMember, SeasonMemberFields, SEASON_TAGS, MailchimpResult } from '@/types';
 import { getMailChimpService } from './mailchimp';
 
-// Online version - Only use Supabase
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// Server-only Supabase client. This file must only be imported from API routes.
+// Preferred: SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (secret, never sent to the browser).
+// The NEXT_PUBLIC_* names are still accepted as a fallback for older local setups.
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.SUPABASE_ANON_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Missing Supabase environment variables. Please check your environment configuration.');
+  throw new Error('Missing Supabase environment variables (SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY).');
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
+
+// Season tables: 2026 = socios 2026-27 (loaded list), 2027 = renewals (members27)
+export const SEASON_TABLES = {
+  '2026': 'socios_2627',
+  '2027': 'members27',
+} as const;
+export type Season = keyof typeof SEASON_TABLES;
+
+// Send a member to Mailchimp with the tag of its season list.
+// 2026 -> "Activos 25-26"; 2027 -> "Activos 26-27" and removes "Activos 25-26".
+async function syncSeasonTags(season: Season, fields: SeasonMemberFields): Promise<MailchimpResult> {
+  const mailchimp = getMailChimpService();
+  if (!mailchimp) return { ok: false, skipped: true, error: 'MailChimp not configured' };
+  const add = [SEASON_TAGS[season]];
+  const remove = season === '2027' ? [SEASON_TAGS['2026']] : [];
+  return mailchimp.syncContact(fields, add, remove);
+}
 
 export class DatabaseService {
+  // Get all rows from a season table
+  async getSeasonMembers(season: Season): Promise<Member[]> {
+    const table = SEASON_TABLES[season];
+    const { data, error } = await supabase
+      .from(table)
+      .select('*')
+      .order('last_name', { nullsFirst: false });
+
+    if (error) {
+      console.error(`Error fetching ${table}:`, error);
+      throw new Error(`Failed to fetch ${table}: ${error.message}`);
+    }
+
+    return data || [];
+  }
+
+  // Search a season table: exact member number and/or partial email
+  async searchSeason(season: Season, criteria: { member_number?: string; email?: string }): Promise<SeasonMember[]> {
+    let query = supabase.from(SEASON_TABLES[season]).select('*');
+    if (criteria.member_number) query = query.eq('member_number', criteria.member_number.trim());
+    if (criteria.email) query = query.ilike('email', `%${criteria.email.trim()}%`);
+    const { data, error } = await query.order('last_name', { nullsFirst: false });
+    if (error) throw new Error(`Failed to search ${SEASON_TABLES[season]}: ${error.message}`);
+    return (data || []) as SeasonMember[];
+  }
+
+  // Find a row in members27 that matches this member (same number + same email)
+  async findIn2027(member: SeasonMemberFields): Promise<SeasonMember | null> {
+    let query = supabase.from(SEASON_TABLES['2027']).select('*');
+    query = member.member_number ? query.eq('member_number', member.member_number) : query.is('member_number', null);
+    query = member.email ? query.ilike('email', member.email) : query.is('email', null);
+    const { data, error } = await query.limit(1);
+    if (error) throw new Error(`Failed to check members27: ${error.message}`);
+    return data && data.length ? (data[0] as SeasonMember) : null;
+  }
+
+  // Mark which search results already exist in members27
+  async markIn2027(members: SeasonMember[]): Promise<SeasonMember[]> {
+    const numbers = members.map(m => m.member_number).filter((n): n is string => !!n);
+    if (!numbers.length) return members.map(m => ({ ...m, in_2027: false }));
+    const { data, error } = await supabase
+      .from(SEASON_TABLES['2027'])
+      .select('member_number, email')
+      .in('member_number', numbers);
+    if (error) throw new Error(`Failed to check members27: ${error.message}`);
+    const keys = new Set((data || []).map(r => `${r.member_number}|${(r.email || '').toLowerCase()}`));
+    return members.map(m => ({ ...m, in_2027: keys.has(`${m.member_number}|${(m.email || '').toLowerCase()}`) }));
+  }
+
+  // Copy a member from socios_2627 to members27
+  async migrateTo2027(id: number): Promise<{ member: SeasonMember; mailchimp: MailchimpResult }> {
+    const { data: source, error: srcError } = await supabase
+      .from(SEASON_TABLES['2026']).select('*').eq('id', id).single();
+    if (srcError || !source) throw new Error('Member not found in 2026 list');
+
+    const fields: SeasonMemberFields = {
+      member_number: source.member_number,
+      first_name: source.first_name,
+      last_name: source.last_name,
+      email: source.email,
+      phone: source.phone
+    };
+
+    if (await this.findIn2027(fields)) throw new Error('Member already exists in 2027 list');
+
+    const { data, error } = await supabase
+      .from(SEASON_TABLES['2027']).insert([fields]).select().single();
+    if (error) throw new Error(`Failed to migrate member: ${error.message}`);
+
+    // Mailchimp: add the 2027 tag and drop the 2026 tag
+    const mailchimp = await syncSeasonTags('2027', fields);
+    return { member: data as SeasonMember, mailchimp };
+  }
+
+  // Update any field of a row in a season table
+  async updateSeasonMember(
+    season: Season,
+    id: number,
+    fields: Partial<SeasonMemberFields>
+  ): Promise<{ member: SeasonMember; mailchimp: MailchimpResult; updated2027: boolean }> {
+    const table = SEASON_TABLES[season];
+
+    // Current values, needed to find the Mailchimp contact and the 2027 copy
+    const { data: before, error: readError } = await supabase.from(table).select('*').eq('id', id).single();
+    if (readError || !before) throw new Error('Member not found');
+
+    const { data, error } = await supabase.from(table).update(fields).eq('id', id).select().single();
+    if (error) throw new Error(`Failed to update member: ${error.message}`);
+    const member = data as SeasonMember;
+
+    // Keep the 2027 copy (same number + old email) in step with edits made on the 2026 list
+    let updated2027 = false;
+    let in2027 = season === '2027';
+    if (season === '2026') {
+      const copy = await this.findIn2027(before as SeasonMemberFields);
+      if (copy) {
+        in2027 = true;
+        const { error: copyError } = await supabase.from(SEASON_TABLES['2027']).update(fields).eq('id', copy.id);
+        if (copyError) console.error('Failed to update 2027 copy:', copyError.message);
+        else updated2027 = true;
+      }
+    }
+
+    // Mailchimp: follow the email change / update names; create with the right tag if missing
+    const mc = getMailChimpService();
+    const mailchimp: MailchimpResult = mc
+      ? await mc.updateContact(
+          before.email,
+          member,
+          [SEASON_TAGS[in2027 ? '2027' : '2026']],
+          in2027 ? [SEASON_TAGS['2026']] : []
+        )
+      : { ok: false, skipped: true, error: 'MailChimp not configured' };
+
+    return { member, mailchimp, updated2027 };
+  }
+
+  // Add a new member to a season table (rejects a member number already in that table)
+  async addSeasonMember(season: Season, fields: SeasonMemberFields): Promise<{ member: SeasonMember; mailchimp: MailchimpResult }> {
+    const table = SEASON_TABLES[season];
+    if (fields.member_number) {
+      const { data: existing, error: exError } = await supabase
+        .from(table).select('id').eq('member_number', fields.member_number).limit(1);
+      if (exError) throw new Error(`Failed to check ${table}: ${exError.message}`);
+      if (existing && existing.length) throw new Error(`Member number ${fields.member_number} already exists in ${season} list`);
+    }
+    const { data, error } = await supabase.from(table).insert([fields]).select().single();
+    if (error) throw new Error(`Failed to add member: ${error.message}`);
+
+    // Mailchimp: tag with the season tag (a 2027 member also loses the 2026 tag)
+    const mailchimp = await syncSeasonTags(season, fields);
+    return { member: data as SeasonMember, mailchimp };
+  }
+
+  // Count rows in a season table
+  async countSeasonMembers(season: Season): Promise<number> {
+    const table = SEASON_TABLES[season];
+    const { count, error } = await supabase
+      .from(table)
+      .select('*', { count: 'exact', head: true });
+
+    if (error) {
+      console.error(`Error counting ${table}:`, error);
+      throw new Error(`Failed to count ${table}: ${error.message}`);
+    }
+
+    return count || 0;
+  }
+
   // Get all members from 2025 table
   async getMembers2025(): Promise<Member[]> {
     const { data, error } = await supabase
@@ -214,25 +387,25 @@ export class DatabaseService {
     return { success: successCount, errors };
   }
 
-  // Get database status
-  async getStatus(): Promise<{ connected: boolean; tables: { members_2025: number; members_2026: number }; error?: string }> {
+  // Get database status (season tables 2026 and 2027)
+  async getStatus(): Promise<{ connected: boolean; tables: { members_2026: number; members_2027: number }; error?: string }> {
     try {
-      const [members2025, members2026] = await Promise.all([
-        this.getMembers2025(),
-        this.getMembers2026()
+      const [members2026, members2027] = await Promise.all([
+        this.countSeasonMembers('2026'),
+        this.countSeasonMembers('2027')
       ]);
 
       return {
         connected: true,
         tables: {
-          members_2025: members2025.length,
-          members_2026: members2026.length
+          members_2026: members2026,
+          members_2027: members2027
         }
       };
     } catch (error) {
       return {
         connected: false,
-        tables: { members_2025: 0, members_2026: 0 },
+        tables: { members_2026: 0, members_2027: 0 },
         error: error instanceof Error ? error.message : 'Unknown error'
       };
     }

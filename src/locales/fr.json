@@ -18,14 +18,19 @@
     "dashboard": "Tableau de bord"
   },
   "memberSearch": {
-    "title": "Rechercher Membre de la Liste 2025",
-    "description": "Rechercher un membre existant par numéro de membre ou adresse e-mail",
+    "title": "Rechercher Membre (liste 2026)",
+    "description": "Rechercher un membre de la liste 2026 par numéro de membre ou adresse e-mail",
     "memberNumber": "Numéro de membre",
     "email": "Adresse e-mail",
     "searchButton": "Rechercher Membre",
     "noResults": "Aucun membre trouvé",
     "foundMember": "Membre trouvé",
-    "transferButton": "Transférer vers 2026"
+    "transferButton": "Migrer vers 27",
+    "editButton": "Modifier",
+    "alreadyIn2027": "Déjà en 2027",
+    "migrated": "Membre migré vers 2027",
+    "saved": "Modifications enregistrées",
+    "saving": "Enregistrement..."
   },
   "memberForm": {
     "title": "Ajouter Nouveau Membre",
@@ -52,8 +57,8 @@
   },
   "addMember": {
     "title": "Ajouter un Nouveau Membre",
-    "description": "Ajoutez manuellement des membres individuels à votre base de données. Choisissez la base de données cible et si vous voulez synchroniser avec MailChimp.",
-    "targetDatabase": "Base de Données Cible",
+    "description": "Saisissez les données d'un nouveau membre et choisissez la liste.",
+    "targetDatabase": "Liste",
     "database2025": "Membres 2025",
     "database2026": "Membres 2026",
     "mailchimpSync": "Sera synchronisé avec MailChimp",
@@ -70,6 +75,9 @@
     "amountPaid": "Montant Payé",
     "addButton": "Ajouter Membre",
     "adding": "Ajout du membre...",
-    "willSync": "Sera synchronisé avec MailChimp"
+    "willSync": "Sera synchronisé avec MailChimp",
+    "database2027": "Membres 2027",
+    "added": "Membre ajouté à la liste",
+    "required": "Obligatoire"
   }
 }

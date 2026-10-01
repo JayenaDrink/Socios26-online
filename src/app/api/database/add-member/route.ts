@@ -1,65 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DatabaseService } from '@/lib/supabase';
+import { getDatabaseService, SEASON_TABLES, Season } from '@/lib/supabase';
 
+// Add a new member to socios_2627 (season 2026, default) or members27 (season 2027)
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { member_number, first_name, last_name, email, phone, amount_paid, year, database } = body;
+    const season: string = body.season || '2026';
+    const t = (v: unknown) => (typeof v === 'string' && v.trim() !== '' ? v.trim() : null);
 
-    // Validate required fields
-    if (!member_number || !first_name || !last_name || !email) {
-      return NextResponse.json(
-        { success: false, error: 'Missing required fields' },
-        { status: 400 }
-      );
-    }
-
-    // Validate database selection
-    if (!['2025', '2026'].includes(database)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid database selection' },
-        { status: 400 }
-      );
-    }
-
-    const dbService = new DatabaseService();
-
-    // Prepare member data
-    const memberData = {
-      member_number,
-      first_name,
-      last_name,
-      email,
-      phone: phone || '',
-      amount_paid: amount_paid || 35,
-      year: year || (database === '2025' ? 2025 : 2026),
-      is_active: true,
-      source: 'form' as const
+    const fields = {
+      member_number: t(body.member_number),
+      first_name: t(body.first_name),
+      last_name: t(body.last_name),
+      email: t(body.email),
+      phone: t(body.phone)
     };
 
-    let result;
-
-    if (database === '2025') {
-      // Add to 2025 database only
-      result = await dbService.addMemberTo2025(memberData);
-    } else {
-      // Add to 2026 database with MailChimp sync
-      result = await dbService.addMemberTo2026(memberData);
+    if (!(season in SEASON_TABLES)) {
+      return NextResponse.json({ success: false, error: 'Invalid list selection' }, { status: 400 });
+    }
+    if (!fields.member_number || !fields.first_name || !fields.last_name) {
+      return NextResponse.json(
+        { success: false, error: 'Member number, first name and last name are required' },
+        { status: 400 }
+      );
     }
 
-    return NextResponse.json({
-      success: true,
-      member: result,
-      message: `Member successfully added to ${database} database${database === '2026' ? ' and MailChimp' : ''}`
-    });
+    const database = getDatabaseService();
+    const { member, mailchimp } = await database.addSeasonMember(season as Season, fields);
 
+    return NextResponse.json({ success: true, member, mailchimp, message: `Member added to ${season} list` });
   } catch (error) {
     console.error('Error adding member:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to add member' 
-      },
+      { success: false, error: error instanceof Error ? error.message : 'Failed to add member' },
       { status: 500 }
     );
   }

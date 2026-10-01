@@ -171,3 +171,26 @@ CREATE INDEX idx_mailchimp_sync_member_id ON mailchimp_sync(member_id);
 ---
 
 **Ready to deploy?** Choose your platform and follow the steps above! 🎉
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
